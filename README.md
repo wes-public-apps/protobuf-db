@@ -17,6 +17,10 @@ When an system uses a collection of microservices to accomplish its goal, one of
 
 One feature of such a system design is that you can get significant insight into the state of your system by logging the protobuf messages. The problem arises when it comes to analizing that data in an efficient and meaningful way. There are many amazing plug and play data analysis tools but they usually require your data to be in a database. While this is truthfully not a terrible process it can be made easier if there is a tool that can help you manage your database schemas based on provided protobufs. Protobuf message definitions already force the structure needed to define the database structure, that information just needs to be transformed. That is what this utility does.
 
+# Out of Scope
+- Services
+- Options
+
 # Protobuf to Schema
 This part of the protobuf-db utility converts an existing collection of protobuf message definitions as python objects into an sql schema.
 
