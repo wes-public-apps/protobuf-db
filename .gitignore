@@ -1,0 +1,4 @@
+tests/explore.py
+tests/interp_notes.py
+__pycache__
+.vscode

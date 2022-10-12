@@ -24,7 +24,9 @@ setup(
     ],
     keywords="protobuf schema sql migration",
     packages=find_packages(exclude=["tests"]),
-    install_requires=[],
+    install_requires=[
+        "protobuf == 4.21.6"
+    ],
     tests_require=tests_requires,
     extras_require={
         'test': tests_requires,

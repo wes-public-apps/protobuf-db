@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+message N2 {
+    string val2 = 1;
+}
+
+message TestNested {
+    message N1 {
+        string val1 = 1;
+    }
+    N1 val1 = 1;
+    N2 val2 = 2;
+}
