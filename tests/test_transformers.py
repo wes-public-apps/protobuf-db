@@ -8,10 +8,11 @@ from complex_pb2 import N4, N6, ComplexMessage
 from nested_pb2 import N2, TestNested
 from specials_pb2 import TestSpecials
 from types_pb2 import N3, TestTypes, TYPES
-from protobuf_utility.data_ingestion.transformers import flatten_proto_to_csv
-from protobuf_utility.data_ingestion.transformers import flatten_proto_to_list
-from protobuf_utility.data_ingestion.transformers import flatten_mixed_proto_stream_to_csv
-from protobuf_utility.data_ingestion.transformers import flatten_same_proto_stream_to_csv
+
+from protobuf_utility.transforms.csv_transformer import flatten_mixed_proto_stream_to_csv
+from protobuf_utility.transforms.csv_transformer import flatten_proto_to_csv
+from protobuf_utility.transforms.csv_transformer import flatten_same_proto_stream_to_csv
+from protobuf_utility.transforms.list_transformer import flatten_proto_to_list
 
 
 class TestTransformers(TestCase):
