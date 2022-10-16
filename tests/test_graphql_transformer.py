@@ -8,6 +8,12 @@ from protobuf_utility.transforms.graphql_transformer import proto_definition_to_
 
 class TestGraphqlTransformer(TestCase):
 
+    # region Test GraphQL Schema Generation using Strawberry
+    def test_proto_definition_to_graphql_schema_strawberry_raw(self) -> None:
+        pass
+    # endregion
+
+    # region Test GraphQL Query Generation
     def test_proto_definition_to_graphql_query_raw(self) -> None:
         self.assertEqual(
             proto_definition_to_graphql_query(td.raw_msg),
@@ -61,6 +67,7 @@ class TestGraphqlTransformer(TestCase):
             proto_definition_to_graphql_query(td.test_types),
             '{\n\tval1\n\tval2\n\tval3\n\tval4\n\tval5\n\tval6\n\tval7\n\tval8\n\tval9\n\tval10\n\tval11\n\tval12\n\tval13\n\tval14\n\tval15\n\tval16\n\tval17 {\n\t\tval1\n\t\tval2\n\t}\n\tval18 {\n\t\tkey\n\t\tvalue {\n\t\t\tval1\n\t\t\tval2\n\t\t}\n\t}\n\tval19 {\n\t\tval1\n\t\tval2\n\t}\n}'
         )
+    # endregion
 
 
 if __name__ == "__main__":

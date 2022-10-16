@@ -7,6 +7,10 @@ MessageMapContainer = google._upb._message.MessageMapContainer
 Descriptor = google._upb._message.Descriptor
 
 
+def proto_definition_to_strawberry_graphql_schema(proto_def: MessageMeta) -> str:
+    pass
+
+
 def proto_definition_to_graphql_query(proto_def: MessageMeta) -> str:
     """Generated the client side graphql query for protobuf object as a string.
     Args:
