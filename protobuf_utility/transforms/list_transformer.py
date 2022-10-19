@@ -20,15 +20,9 @@ def flatten_proto_to_list(obj: ProtoAny) -> Tuple[List, List]:
     # Sort fields based on number to provide a more reproducible order
     # Unsorted order matches that of file definition order even though there is no change to the
     # underlying protobuf if a field is moved. This makes the code unnecessarily unstable.
-    field_nums = []
-    fields = []
-    for field in obj.DESCRIPTOR.fields:
-        field_nums.append(field.number)
-        fields.append(field)
-    id_fields = zip(field_nums, fields)
-    sorted_id_fields = sorted(id_fields)
+    sorted_fields = sorted(obj.DESCRIPTOR.fields, key=lambda f: f.number)
 
-    for _, field in sorted_id_fields:
+    for field in sorted_fields:
         value = getattr(obj, field.name)
 
         # Handle nested messages

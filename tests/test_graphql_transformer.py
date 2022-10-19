@@ -1,16 +1,34 @@
 from unittest import TestCase
 import unittest
 
+from common_pb2 import RawMsg
+from complex_pb2 import N4, N6, ComplexMessage
+from nested_pb2 import N2, TestNested
+from specials_pb2 import TestSpecials
 import test_data as td
+from types_pb2 import N3, TestTypes, TYPES
 
-from protobuf_utility.transforms.graphql_transformer import proto_definition_to_graphql_query
+from protobuf_utility.transforms.graphql_transformer import (
+    proto_definition_to_graphql_query,
+    proto_definition_to_strawberry_graphql_schema,
+    proto_definition_to_strawberry_type
+)
 
 
 class TestGraphqlTransformer(TestCase):
 
     # region Test GraphQL Schema Generation using Strawberry
     def test_proto_definition_to_graphql_schema_strawberry_raw(self) -> None:
-        pass
+        from queue import Queue
+        print(
+            proto_definition_to_strawberry_type(RawMsg, [], Queue())
+        )
+
+    def test_proto_definition_to_graphql_schema_strawberry_complex(self) -> None:
+        from queue import Queue
+        print(
+            proto_definition_to_strawberry_type(ComplexMessage, [], Queue())
+        )
     # endregion
 
     # region Test GraphQL Query Generation
