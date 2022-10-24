@@ -1,3 +1,4 @@
+import logging
 from unittest import TestCase
 import unittest
 
@@ -14,21 +15,40 @@ from protobuf_utility.transforms.graphql_transformer import (
     proto_definition_to_strawberry_type
 )
 
+logging.getLogger().setLevel(logging.DEBUG)
+
 
 class TestGraphqlTransformer(TestCase):
 
     # region Test GraphQL Schema Generation using Strawberry
-    def test_proto_definition_to_graphql_schema_strawberry_raw(self) -> None:
-        from queue import Queue
-        print(
-            proto_definition_to_strawberry_type(RawMsg, [], Queue())
-        )
-
     def test_proto_definition_to_graphql_schema_strawberry_complex(self) -> None:
+        print()
+        for file in proto_definition_to_strawberry_graphql_schema(ComplexMessage):
+            print(file)
+
+    def test_proto_definition_to_strawberry_type_raw(self) -> None:
         from queue import Queue
+        imports = set()
         print(
-            proto_definition_to_strawberry_type(ComplexMessage, [], Queue())
+            proto_definition_to_strawberry_type(RawMsg.DESCRIPTOR, imports, Queue())
         )
+        print(imports)
+
+    def test_proto_definition_to_strawberry_type_complex(self) -> None:
+        from queue import Queue
+        imports = set()
+        print(
+            proto_definition_to_strawberry_type(ComplexMessage.DESCRIPTOR, imports, Queue())
+        )
+        print(imports)
+
+    def test_proto_definition_to_strawberry_type_types(self) -> None:
+        from queue import Queue
+        imports = set()
+        print(
+            proto_definition_to_strawberry_type(TestTypes.DESCRIPTOR, imports, Queue())
+        )
+        print(imports)
     # endregion
 
     # region Test GraphQL Query Generation
