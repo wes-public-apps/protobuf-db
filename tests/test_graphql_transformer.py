@@ -12,7 +12,7 @@ from types_pb2 import N3, TestTypes, TYPES
 from protobuf_utility.transforms.graphql_transformer import (
     proto_definition_to_graphql_query,
     proto_definition_to_strawberry_graphql_schema,
-    proto_definition_to_strawberry_type
+    proto_descriptor_to_strawberry_type
 )
 
 logging.getLogger().setLevel(logging.DEBUG)
@@ -30,7 +30,7 @@ class TestGraphqlTransformer(TestCase):
         from queue import Queue
         imports = set()
         print(
-            proto_definition_to_strawberry_type(RawMsg.DESCRIPTOR, imports, Queue())
+            proto_descriptor_to_strawberry_type(RawMsg.DESCRIPTOR, imports, Queue())
         )
         print(imports)
 
@@ -38,7 +38,7 @@ class TestGraphqlTransformer(TestCase):
         from queue import Queue
         imports = set()
         print(
-            proto_definition_to_strawberry_type(ComplexMessage.DESCRIPTOR, imports, Queue())
+            proto_descriptor_to_strawberry_type(ComplexMessage.DESCRIPTOR, imports, Queue())
         )
         print(imports)
 
@@ -46,7 +46,7 @@ class TestGraphqlTransformer(TestCase):
         from queue import Queue
         imports = set()
         print(
-            proto_definition_to_strawberry_type(TestTypes.DESCRIPTOR, imports, Queue())
+            proto_descriptor_to_strawberry_type(TestTypes.DESCRIPTOR, imports, Queue())
         )
         print(imports)
     # endregion
