@@ -11,10 +11,6 @@ There are many benefits to using the system outlined above that I will not get i
 # Protobuf Logger
 This part of the protobuf utility handles logging the live stream of protobuf messages.
 
-# Live stream processing
-NOTE: DEPRIORITIZED This seems kind of pointless since that is the point of the microservices themselves. So this might need some further investigation.
-This part of the protobuf utility adds infrastructure hooks so that you can easily add custom processing into the live stream of messages.
-
 # Data conversion tool
 This part of the protobuf utility handles converting the logged protobuf data into different formats. Specifically it converts the data to csv and to a database.
 

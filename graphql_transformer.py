@@ -17,7 +17,7 @@ def proto_definition_to_graphql_query(proto_def: MessageMeta) -> str:
     return _proto_definition_to_graphql_query(proto_def.DESCRIPTOR)
 
 
-def _proto_definition_to_graphql_query(proto_descriptor: Descriptor, depth=1):
+def _proto_definition_to_graphql_query(proto_descriptor: Descriptor, depth=1) -> str:
     # Sort fields based on number to provide a more reproducible order
     # Unsorted order matches that of file definition order even though there is no change to the
     # underlying protobuf if a field is moved. This makes the code unnecessarily unstable.
