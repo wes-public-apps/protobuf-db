@@ -1,6 +1,6 @@
+from collections import OrderedDict
 import logging
 from queue import Queue
-import re
 from typing import Any, Dict, Set
 
 import google
@@ -19,7 +19,46 @@ Descriptor = google._upb._message.Descriptor
 EnumDescriptor = google._upb._message.EnumDescriptor
 
 
-def proto_definition_to_strawberry_types(proto_def: MessageMeta) -> Dict[str, str]:
+def construct_definition_tree(root) -> Any:
+    # TODO: creating definition structure based on descriptor full name
+    definitions = Queue()
+    definition_dict = OrderedDict()
+
+    # Walk root descriptor to all childen and populate queue of descriptors
+    # for each descriptor create definition based on full name
+
+    def set_dict(path: str, value):
+        keys = path.split('.')
+        dict_ = definitions
+        for key in keys[:-1]:
+            dict_ = dict_[key]
+        dict_[keys[-1]] = value
+
+    def _walk_descriptor(descriptor: Any) -> None:
+        if isinstance(descriptor, FieldDescriptor):
+            set_dict(descriptor.full_name, _handle_field(descriptor))
+        if isinstance(descriptor, EnumDescriptor):
+            definitions.put_nowait(descriptor)
+            return
+        if isinstance()
+
+    def _handle_field(field: FieldDescriptor) -> str:
+        # if field type is a message
+        if field.type == FieldDescriptor.TYPE_MESSAGE:
+            #   add message to queue
+            definitions.put_nowait(field.message_type)
+            return f'{field.name}: "{field.message_type.full_name}"'
+        # if field type is an enum
+        if field.type == FieldDescriptor.TYPE_ENUM:
+            #   add enum to queue
+            definitions.put_nowait(field.enum_type)
+            return f'{field.name}: "{field.enum_type.full_name}"'
+        # if field type is a python type return a string 'field: type'
+        if field.type in proto_type_to_python_type:
+            return f'{field.name}: "{proto_type_to_python_type[field.type]}"'
+
+
+def proto_definition_to_strawberry_types(proto_def: MessageMeta) -> str:
     # collect any related definitions into a queue so they can be generated
     proto_definitions_to_process = Queue()
     proto_definitions_to_process.put_nowait(proto_def.DESCRIPTOR)
@@ -32,9 +71,9 @@ def proto_definition_to_strawberry_types(proto_def: MessageMeta) -> Dict[str, st
         strawberry_type = proto_descriptor_to_strawberry_type(
             proto_descriptor, imports, proto_definitions_to_process)
         imports_str = "\n".join(list(imports))
-        graphql_definitions[proto_descriptor.full_name] = \
-            f'{header}\n{imports_str}\n\n{strawberry_type}\n'
-    return graphql_definitions
+        graphql_definitions[proto_descriptor.full_name] =
+    # TODO: create content
+    return f'{header}\n{imports_str}\n\n{content}\n'
 
 
 def proto_descriptor_to_strawberry_type(
@@ -58,6 +97,8 @@ def _message_descriptor_to_strawberry_type(
     # WARNING: This makes the assumption that used message_types are defined in a file in the same
     #          folder with a name that is the snake case version of the definition name.
 
+    # handle nested
+
     # define class signature and docstring
     line_prefix = indent_count * '\t'
     lines = []
@@ -79,25 +120,19 @@ def _message_descriptor_to_strawberry_type(
 
     # for each field
     def handle_complex_types(complex_type) -> str:
-        field_type: str = complex_type.full_name
-
         # not nested external type
         if complex_type.name == complex_type.full_name:
-            name = complex_type.name
+            definition_queue.put_nowait(complex_type)
 
         # nested external type
         elif root_type not in complex_type.full_name:
-            name = complex_type.full_name.split('.')[0]
-            # add to queue to process
             definition_queue.put_nowait(complex_type)
 
         # nested object on current definitions
         else:
-            return field_type[field_type.find('.', field_type.find(root_type))+1:]
+            pass
 
-        filename = re.sub(r'(?<!^)(?=[A-Z])', '_', name).lower()
-        imports.add(f'from {filename}_gql import {name}')
-        return field_type
+        return complex_type.full_name
 
     sorted_fields = sorted(proto_descriptor.fields, key=lambda f: f.number)
     for field in sorted_fields:
