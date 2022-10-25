@@ -11,7 +11,7 @@ from types_pb2 import N3, TestTypes, TYPES
 
 from protobuf_utility.transforms.graphql_transformer import (
     proto_definition_to_graphql_query,
-    proto_definition_to_strawberry_graphql_schema,
+    proto_definition_to_strawberry_types,
     proto_descriptor_to_strawberry_type
 )
 
@@ -23,8 +23,8 @@ class TestGraphqlTransformer(TestCase):
     # region Test GraphQL Schema Generation using Strawberry
     def test_proto_definition_to_graphql_schema_strawberry_complex(self) -> None:
         print()
-        for file in proto_definition_to_strawberry_graphql_schema(ComplexMessage):
-            print(file)
+        for type_, file in proto_definition_to_strawberry_types(ComplexMessage).items():
+            print(type_, file)
 
     def test_proto_definition_to_strawberry_type_raw(self) -> None:
         from queue import Queue
