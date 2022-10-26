@@ -1,4 +1,5 @@
 import logging
+from textwrap import indent
 from unittest import TestCase
 import unittest
 
@@ -10,6 +11,7 @@ import test_data as td
 from types_pb2 import N3, TestTypes, TYPES
 
 from protobuf_utility.transforms.graphql_transformer import (
+    construct_definition_tree,
     proto_definition_to_graphql_query,
     proto_definition_to_strawberry_types,
     proto_descriptor_to_strawberry_type
@@ -21,10 +23,22 @@ logging.getLogger().setLevel(logging.DEBUG)
 class TestGraphqlTransformer(TestCase):
 
     # region Test GraphQL Schema Generation using Strawberry
+    def test_construct_definition_tree_complex(self) -> None:
+        print()
+        def_dict = construct_definition_tree(ComplexMessage.DESCRIPTOR)
+
+        def print_dict(dict_, depth=0):
+            indent_str = '\t'*depth
+            for key, value in dict_.items():
+                if not isinstance(value, dict):
+                    print(f'{indent_str}{key}: {value}', flush=True)
+                else:
+                    print(f'{key}:\n', print_dict(value, depth=depth + 1), flush=True)
+        print_dict(def_dict)
+
     def test_proto_definition_to_graphql_schema_strawberry_complex(self) -> None:
         print()
-        for type_, file in proto_definition_to_strawberry_types(ComplexMessage).items():
-            print(type_, file)
+        print(proto_definition_to_strawberry_types(ComplexMessage))
 
     def test_proto_definition_to_strawberry_type_raw(self) -> None:
         from queue import Queue
