@@ -1,6 +1,10 @@
 from unittest import TestCase
 import unittest
 
+from protobuf_strawberry_graphql import definition_to_query
+
+from complex_pb2 import ComplexMessage
+
 
 class TestGraphqlTransformer(TestCase):
 
@@ -11,7 +15,7 @@ class TestGraphqlTransformer(TestCase):
         pass
 
     def test_proto_definition_to_graphql_complex(self) -> None:
-        pass
+        print(definition_to_query(ComplexMessage), flush=True)
 
     def test_proto_definition_to_graphql_n6(self) -> None:
         pass
