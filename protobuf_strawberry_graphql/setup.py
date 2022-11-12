@@ -6,11 +6,11 @@ tests_requires = []
 dev_requires = [] + tests_requires
 
 setup(
-    name="protobuf-utility",
+    name="protobuf-strawberry-graphql",
     version="0.1.0",
     description='''
-    A utility providing limited infrastructure for managing data objects created utilizing google's
-    protobuf.
+    Infrastructure for converting protobuf objects to a graphql model using python's strawberry
+    library.
     ''',
     author='Wesley Murray',
     author_email='murraywj97@gmail.com',
@@ -21,10 +21,11 @@ setup(
         "Programming Language :: Python :: 3.8",
         "License :: OSI Approved :: MIT License",
     ],
-    keywords="protobuf schema sql migration graphql logging",
+    keywords="protobuf strawberry graphql",
     packages=find_packages(exclude=["tests"]),
     install_requires=[
-        "protobuf == 4.21.6"
+        "protobuf == 4.21.6",
+        "strawberry-graphql == 0.142.1"
     ],
     tests_require=tests_requires,
     extras_require={

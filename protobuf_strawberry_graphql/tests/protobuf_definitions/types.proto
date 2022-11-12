@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+enum TYPES {
+    DEFAULT = 0;
+    type1 = 1;
+    type2 = 2;
+}
+
+message N3 {
+    uint32 val1 = 1;
+    uint32 val2 = 2;
+}
+
+message TestTypes {
+    double val1 = 1;
+    float val2 = 2;
+    int32 val3 = 3;
+    int64 val4 = 4;
+    uint32 val5 = 5;
+    uint64 val6 = 6;
+    sint32 val7 = 7;
+    sint64 val8 = 8;
+    fixed32 val9 = 9;
+    fixed64 val10 = 10;
+    sfixed32 val11 = 11;
+    sfixed64 val12 = 12;
+    bool val13 = 13;
+    string val14 = 14;
+    bytes val15 = 15;
+    TYPES val16 = 16;
+    N3 val17 = 17;
+    map<string, N3> val18 = 18;
+    repeated N3 val19 = 19;
+}

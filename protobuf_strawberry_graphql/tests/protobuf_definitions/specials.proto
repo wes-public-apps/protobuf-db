@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+message TestSpecials {
+    reserved 1, 2, 5 to 8, 40 to max;
+    reserved "old_field1", "old_field2";
+    repeated string list1 = 3;
+    map<string, string> map1 = 4;
+
+    oneof test_oneof {
+        bool fault1 = 9;
+        bool fault2 = 10;
+    }
+}

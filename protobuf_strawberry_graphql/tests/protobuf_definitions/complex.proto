@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+import 'common.proto';
+
+message N4 {
+    uint32 id = 1;
+    reserved 2 to 3;
+    repeated common.RawMsg raw_msgs = 4;
+    map<string, common.RawMsg> raw_msgs_by_id = 5;
+}
+
+message ComplexMessage {
+    message N5 {
+        enum N5Types {
+            DEFAULT = 0;
+            type1 = 1;
+            type2 = 2;
+            type3 = 3;
+        }
+        repeated N5Types types = 1;
+        string data = 2;
+    }
+    map<string, common.RawMsg> raw_msgs_by_id = 1;
+    reserved 2, 4;
+    repeated N4 n4s = 3;
+    map <string, N4> n4s_by_id = 5;
+    map <string, N5> n5s_by_id = 6;
+}
+
+message N6 {
+    ComplexMessage.N5 n5val = 1;
+}

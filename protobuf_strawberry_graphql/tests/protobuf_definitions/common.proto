@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package common;
+
+message RawMsg {
+    uint32 timestamp = 2;
+    string data = 3;
+    uint32 id = 1;
+}
