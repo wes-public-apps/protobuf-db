@@ -7,6 +7,7 @@ from google.protobuf.descriptor import FieldDescriptor
 
 
 _LOGGER = logging.getLogger(__name__)
+PYTHON_TAB = '    '
 
 
 MessageMeta = google._upb._message.MessageMeta
@@ -44,12 +45,6 @@ proto_type_to_python_type = {
 # TODO:
 # - support processing a collection of message definitions
 #  (consider if requiring common objects not be duplicates is worth it)
-# - provide methods for converting protobuf object to its graphql object
-#  there are a couple of options. either auto generate the code as part of the type definition
-#  or have a method here and import the files you generated (maybe both options)
-#  explore taking advantage of strawberry field instead of type definitions. we could reference
-#  the relevant proto object as an object property and then have a field for retrieve each
-#  attribute on the referenced object.
 # - try splitting this code up some more and add more comments
 # - add commandline interface to this tool
 
@@ -65,20 +60,103 @@ def definitions_to_reference_type(definitions: Iterable[MessageMeta]) -> Iterabl
     pass
 
 
-def defintion_to_reference_type(defintion: 'MessageMeta') -> str:
-    # utility strawberry's field decorator and store the relevant proto as an object reference
-    # no need to create new object every time a new proto comes in (need locking)
-    pass
+def definition_tree_to_reference_type(definition_tree: DescriptorWrapper) -> str:
+    def descriptor_to_class_str(
+            descriptor: 'Descriptor', nested_types: List[str] = [], depth=0) -> str:
+        indent = PYTHON_TAB*depth
+        if isinstance(descriptor, EnumDescriptor):
+            definition_tree.import_enum = True
+            return _enum_descriptor_to_str(descriptor, tabs=depth)
+        else:
+            class_def_str = f'{indent}@strawberry.type\n{indent}class {descriptor.name}:\n\n'
+            class_def_str += _reference_type_create_method_definition(descriptor, tabs=depth+1)
+            class_def_str += f'\n\n{indent + PYTHON_TAB}def __init__(self, proto):'
+            class_def_str += f'\n{indent + PYTHON_TAB*2}self.proto = proto\n'
+            if nested_types:
+                class_def_str += '\n' + '\n\n'.join(nested_types)
+            for field in descriptor.fields:
+                class_def_str += f'\n{_reference_type_field_to_method_definition(field, tabs=depth+1)}\n'
+            class_def_str += f'\n{_reference_type_update_method_definition(descriptor, tabs=depth+1)}\n'
+            return class_def_str
+
+    def file_tree_to_str(name: str, curr_node: DescriptorWrapper, depth=0) -> str:
+        if not curr_node.children:
+            if curr_node.descriptor:
+                return descriptor_to_class_str(curr_node.descriptor, depth=depth)
+            else:
+                indent = depth*PYTHON_TAB
+                return f"{indent}@strawberry.type\n{indent}class {name}:\npass"
+
+        children = []
+        for name_, child in curr_node.children.items():
+            children.append(file_tree_to_str(name_, child, depth=depth+1))
+        if curr_node.descriptor:
+            return descriptor_to_class_str(curr_node.descriptor, nested_types=children, depth=depth)
+        else:
+            indent = depth*PYTHON_TAB
+            nested_types = '\n'.join(children)
+            return f"{indent}@strawberry.type\n{indent}class {name}:\n{nested_types}"
+
+    children = []
+    for name, child in definition_tree.children.items():
+        children.append(file_tree_to_str(name, child))
+
+    header = 'from typing import List\n\n\nimport strawberry\n\n\n'
+    header = f'from enum import Enum\n{header}' if definition_tree.import_enum else header
+    content = '\n\n\n'.join(children)
+    return f'{header}{content}\n'
 
 
-def definition_to_type(definition: 'MessageMeta') -> str:
-    """Uses a protobuf message definition to autogenerate a parallel strawberry graphql type.
-    Args:
-        definition (MessageMeta): protobuf message definition to base type generation on.
-    Returns:
-        str: string representing the message's type definition
-    """
-    # cost is needing to create a new or updating every prop on the object every time a new proto comes in
+def definition_tree_to_relay_type(definition_tree: DescriptorWrapper) -> str:
+    def descriptor_to_class_str(
+            descriptor: 'Descriptor', nested_types: List[str] = [], depth=0) -> str:
+        indent = PYTHON_TAB*depth
+        if isinstance(descriptor, EnumDescriptor):
+            definition_tree.import_enum = True
+            return _enum_descriptor_to_str(descriptor, tabs=depth)
+        else:
+            class_def_str = f'{indent}@strawberry.type\n{indent}class {descriptor.name}:\n'
+            class_def_str += _relay_type_create_method_definition(descriptor, tabs=depth+1)
+            indent += PYTHON_TAB
+            if nested_types:
+                class_def_str += '\n' + '\n'.join(nested_types) + '\n'
+            for field in descriptor.fields:
+                field_str = _field_to_str(field)
+                class_def_str += f'\n{indent}{field_str}'
+            class_def_str += f'\n{_relay_type_update_method_definition(descriptor, tabs=depth+1)}\n'
+            return class_def_str
+
+    def file_tree_to_str(name: str, curr_node: DescriptorWrapper, depth=0) -> str:
+        if not curr_node.children:
+            if curr_node.descriptor:
+                return descriptor_to_class_str(curr_node.descriptor, depth=depth)
+            else:
+                indent = depth*PYTHON_TAB
+                return f"{indent}@strawberry.type\n{indent}class {name}:\npass"
+
+        children = []
+        for name_, child in curr_node.children.items():
+            children.append(file_tree_to_str(name_, child, depth=depth+1))
+        if curr_node.descriptor:
+            return descriptor_to_class_str(curr_node.descriptor, nested_types=children, depth=depth)
+        else:
+            indent = depth*PYTHON_TAB
+            nested_types = '\n'.join(children)
+            return f"{indent}@strawberry.type\n{indent}class {name}:\n{nested_types}"
+
+    children = []
+    for name, child in definition_tree.children.items():
+        children.append(file_tree_to_str(name, child))
+
+    header = 'from typing import List\n\n\nimport strawberry\n\n\n'
+    header = f'from enum import Enum\n{header}' if definition_tree.import_enum else header
+    content = '\n\n'.join(children)
+    return f'{header}{content}\n'
+
+
+def create_definition_tree(definition: 'MessageMeta') -> DescriptorWrapper:
+    # cost is needing to create a new or updating every prop on the object every time a new proto
+    # comes in
 
     # need a global tree representing type definitions
     filetree = DescriptorWrapper()
@@ -127,62 +205,83 @@ def definition_to_type(definition: 'MessageMeta') -> str:
                 pass
 
     construct_file_tree(definition.DESCRIPTOR)
+    return filetree
 
-    def descriptor_to_class_str(
-            descriptor: 'Descriptor', nested_types: List[str] = [], depth=0) -> str:
-        indent = '    '*depth
-        if isinstance(descriptor, EnumDescriptor):
-            filetree.import_enum = True
-            enum_def_str = f'{indent}@strawberry.enum\n{indent}class {descriptor.name}(Enum):'
-            indent += '    '
-            for value in descriptor.values:
-                enum_def_str += f'\n{indent}{value.name} = {value.number}'
-            return enum_def_str
-        else:
-            class_def_str = f'{indent}@strawberry.type\n{indent}class {descriptor.name}:'
-            indent += '    '
-            if nested_types:
-                class_def_str += '\n' + '\n\n'.join(nested_types)
-            for field in descriptor.fields:
-                field_str = field_to_str(field)
-                class_def_str += f'\n{indent}{field_str}'
-            return class_def_str
 
-    def file_tree_to_str(name: str, curr_node: DescriptorWrapper, depth=0) -> str:
-        if not curr_node.children:
-            if curr_node.descriptor:
-                return descriptor_to_class_str(curr_node.descriptor, depth=depth)
+# region Private Methods
+def _reference_type_create_method_definition(descriptor: Descriptor, tabs=1) -> str:
+    indent = PYTHON_TAB * tabs
+    method_str = f'{indent}@staticmethod'
+    method_str += f'\n{indent}def create_from_proto(proto) -> "{descriptor.full_name}":'
+    method_str += f'\n{indent + PYTHON_TAB}return {descriptor.full_name}(proto)'
+    return method_str
+
+
+def _reference_type_update_method_definition(descriptor: Descriptor, tabs=1) -> str:
+    indent = PYTHON_TAB * tabs
+    method_str = f'{indent}def update(self, proto) -> "{descriptor.full_name}":'
+    method_str += f'\n{indent + PYTHON_TAB}self.proto = proto'
+    return method_str
+
+
+def _relay_type_create_method_definition(descriptor: Descriptor, tabs=1) -> str:
+    indent = PYTHON_TAB * tabs
+    method_str = f'{indent}@staticmethod'
+    method_str += f'\n{indent}def create_from_proto(proto) -> "{descriptor.full_name}":'
+    indent += PYTHON_TAB
+    args_str = ''
+    args_indent = indent + PYTHON_TAB
+    for field in descriptor.fields:
+        if field.type == FieldDescriptor.TYPE_MESSAGE:
+            if field.label != FieldDescriptor.LABEL_REPEATED:
+                args_str += f'\n{args_indent}{field.name}='
+                args_str += f'{field.message_type.full_name}.create_from_proto(proto.{field.name}),'
+            elif field.message_type.GetOptions().map_entry:  # is a map:
+                args_str += f'\n{args_indent}{field.name}=['
+                args_str += f'{field.message_type.full_name}(key=k, value=v)'
+                args_str += f' for k, v in proto.{field.name}.items()],'
             else:
-                indent = depth*'    '
-                return f"{indent}@strawberry.type\n{indent}class {name}:\npass"
-
-        children = []
-        for name_, child in curr_node.children.items():
-            children.append(file_tree_to_str(name_, child, depth=depth+1))
-        if curr_node.descriptor:
-            return descriptor_to_class_str(curr_node.descriptor, nested_types=children, depth=depth)
+                args_str += f'\n{args_indent}{field.name}=['
+                args_str += f'{field.message_type.full_name}.create_from_proto(v) for v in proto.{field.name}],'
         else:
-            indent = depth*'    '
-            nested_types = '\n'.join(children)
-            return f"{indent}@strawberry.type\n{indent}class {name}:\n{nested_types}"
+            args_str += f'\n{args_indent}{field.name}=proto.{field.name},'
 
-    children = []
-    for name, child in filetree.children.items():
-        children.append(file_tree_to_str(name, child))
-
-    header = 'import strawberry\n\n\n'
-    header = f'from enum import Enum\n\n\n{header}' if filetree.import_enum else header
-    content = '\n\n\n'.join(children)
-    return f'{header}{content}\n'
+    method_str += f'\n{indent}return {descriptor.full_name}({args_str}\n{indent})\n'
+    return method_str
 
 
-def field_to_str(field: FieldDescriptor) -> str:
-    """Converts field descriptor for a protobuf object to its graphql string representation.
-    Args:
-        field (FieldDescriptor): field descriptor to convert to string.
-    Returns:
-        str: field graphql string representation.
-    """
+def _relay_type_update_method_definition(descriptor: Descriptor, tabs=1) -> str:
+    indent = PYTHON_TAB * tabs
+    method_str = f'\n{indent}def update(self, proto) -> "{descriptor.full_name}":'
+    indent += PYTHON_TAB
+    for field in descriptor.fields:
+        if field.type == FieldDescriptor.TYPE_MESSAGE:
+            if field.label != FieldDescriptor.LABEL_REPEATED:
+                method_str += f'\n{indent}self.{field.name} = '
+                method_str += f'{field.message_type.full_name}.update(proto.{field.name})'
+            elif field.message_type.GetOptions().map_entry:  # is a map:
+                method_str += f'\n{indent}self.{field.name} = ['
+                method_str += f'{field.message_type.full_name}(key=k, value=v)'
+                method_str += f' for k, v in proto.{field.name}.items()],'
+            else:
+                method_str += f'\n{indent}self.{field.name} = ['
+                method_str += f'{field.message_type.full_name}.create_from_proto(v)'
+                method_str += f' for v in proto.{field.name}],'
+        else:
+            method_str += f'\n{indent}self.{field.name}=proto.{field.name}'
+    return method_str
+
+
+def _enum_descriptor_to_str(enum_descriptor: EnumDescriptor, tabs=1) -> str:
+    indent = PYTHON_TAB * tabs
+    enum_def_str = f'{indent}@strawberry.enum\n{indent}class {enum_descriptor.name}(Enum):'
+    indent += PYTHON_TAB
+    for value in enum_descriptor.values:
+        enum_def_str += f'\n{indent}{value.name} = {value.number}'
+    return enum_def_str
+
+
+def _get_field_type(field: FieldDescriptor) -> Optional[str]:
     # Complex Types
     # TODO: handle group
     if field.type == FieldDescriptor.TYPE_MESSAGE:
@@ -195,5 +294,42 @@ def field_to_str(field: FieldDescriptor) -> str:
             field_type = proto_type_to_python_type[field.type]
         else:
             _LOGGER.warning(f"field type: {field.type} not supported. ignoring.")
-            return ''
-    return f"{field.name}: '{field_type}'"
+            return None
+    return f'List[{field_type}]' if field.label == FieldDescriptor.LABEL_REPEATED else field_type
+
+
+def _reference_type_field_to_method_definition(field: FieldDescriptor, tabs=1) -> str:
+    indent = PYTHON_TAB * tabs
+    field_type = _get_field_type(field)
+    if field_type is None:
+        return ''
+    indent_p = indent + PYTHON_TAB
+    str_ = f'{indent}@strawberry.field\n{indent}def {field.name}(self) -> {field_type}:'
+    if field.type == FieldDescriptor.TYPE_MESSAGE:
+        name = field.name
+        if field.label != FieldDescriptor.LABEL_REPEATED:
+            str_ += f'\n{indent_p}return {field.message_type.full_name}(self.proto.{name})'
+            return str_
+        elif field.message_type.GetOptions().map_entry:  # is a map:
+            str_ += f'\n{indent_p}return [{field.message_type.full_name}(key=k, value=v)'
+            str_ += f' for k, v in self.proto.{name}.items()]'
+            return str_
+        else:
+            str_ += f'\n{indent_p}return ['
+            str_ += f'{field.message_type.full_name}(v)'
+            str_ += f' for v in self.proto.{field.name}],'
+            return str_
+    else:
+        return f'{str_}\n{indent_p}return self.proto.{field.name}'
+
+
+def _field_to_str(field: FieldDescriptor) -> str:
+    """Converts field descriptor for a protobuf object to its graphql string representation.
+    Args:
+        field (FieldDescriptor): field descriptor to convert to string.
+    Returns:
+        str: field graphql string representation.
+    """
+    field_type = _get_field_type(field)
+    return f"{field.name}: '{field_type}'" if field_type is not None else ''
+# endregion

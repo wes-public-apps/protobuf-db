@@ -1,12 +1,12 @@
 from unittest import TestCase
 import unittest
 
-from protobuf_strawberry_graphql import definition_to_type
+from protobuf_strawberry_graphql import create_definition_tree, definition_tree_to_reference_type
 
 from complex_pb2 import ComplexMessage
 
 
-class TestDefinitionToType(TestCase):
+class TestDefinitionToReferenceType(TestCase):
 
     def test_raw(self) -> None:
         self.assertTrue(False)
@@ -15,7 +15,8 @@ class TestDefinitionToType(TestCase):
         self.assertTrue(False)
 
     def test_complex(self) -> None:
-        print(definition_to_type(ComplexMessage), flush=True)
+        tree = create_definition_tree(ComplexMessage)
+        print(definition_tree_to_reference_type(tree), flush=True)
         self.assertTrue(False)
 
     def test_n6(self) -> None:
